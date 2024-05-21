@@ -8,7 +8,7 @@ import upload from '../utils/cloudinary.js'
 import sendToken from '../utils/jwtToken.js'
 import { ErrorHandler } from '../utils/utility.js'
 
-const createPost = tryCatch(async (req, res) => {
+const createPost = tryCatch(async (req, res, next) => {
     const user = await User.findById(req.user._id)
     if (!user) return next(new ErrorHandler(404, 'User not Found'))
     const myCloud = await upload(req.file, 'posts')
@@ -44,7 +44,7 @@ const register = tryCatch(async (req, res, next) => {
     sendToken(user, 201, res, 'Registered Successfully')
 })
 
-const login = tryCatch(async (req, res) => {
+const login = tryCatch(async (req, res, next) => {
     const { email, password } = req.body
     // const user = await User.findOne({ email }).select('+password')
     const user = await User.findOne({ email }).select('+password').populate('posts followers following')
@@ -54,7 +54,7 @@ const login = tryCatch(async (req, res) => {
     sendToken(user, 201, res, `Welcome back, ${user.name}`)
 })
 
-const follow = tryCatch(async (req, res) => {
+const follow = tryCatch(async (req, res, next) => {
     const userToFollow = await User.findById(req.params.id)
     const loggedIn = await User.findById(req.user._id)
     if (!userToFollow) return next(new ErrorHandler(404, 'User not found'))
@@ -74,7 +74,7 @@ const follow = tryCatch(async (req, res) => {
     res.status(200).json({ success: true, msg: 'User added to your follow list' })
 })
 
-const logout = tryCatch(async (req, res) => {
+const logout = tryCatch(async (req, res, next) => {
     res.status(200).cookie('token', null, {
         httpOnly: true,
         sameSite: 'none',
@@ -83,7 +83,7 @@ const logout = tryCatch(async (req, res) => {
     }).json({ success: true, msg: 'Logged Out' })
 })
 
-const updatePassword = tryCatch(async (req, res) => {
+const updatePassword = tryCatch(async (req, res, next) => {
     const user = await User.findById(req.user._id).select('+password')
     if (!user) return next(new ErrorHandler(404, 'User doesn\'t exist'))
     const { old, newP } = req.body
@@ -95,7 +95,7 @@ const updatePassword = tryCatch(async (req, res) => {
     res.status(200).json({ success: true, msg: 'Password changed successfully' })
 })
 
-const updateProfile = tryCatch(async (req, res) => {
+const updateProfile = tryCatch(async (req, res, next) => {
     const user = await User.findById(req.user._id)
     if (!user) return next(new ErrorHandler(404, 'User doesn\'t exist'))
     const { name, email, chavi } = req.body
@@ -112,7 +112,7 @@ const updateProfile = tryCatch(async (req, res) => {
     res.status(200).json({ success: true, msg: 'Profile updated successfully' })
 })
 
-const deleteProfile = tryCatch(async (req, res) => {
+const deleteProfile = tryCatch(async (req, res, next) => {
     const user = await User.findById(req.user._id).populate('posts')
     if (!user) return next(new ErrorHandler(404, 'User doesn\'t exist'))
     const posts = user.posts
@@ -171,23 +171,23 @@ const deleteProfile = tryCatch(async (req, res) => {
     res.status(200).json({ success: true, msg: 'Profile deleted successfully' })
 })
 
-const myProfile = tryCatch(async (req, res) => {
+const myProfile = tryCatch(async (req, res, next) => {
     const user = await User.findById(req.user._id).populate('posts following followers')
     res.status(200).json({ success: true, user, msg: 'User fetched successfully' })
 })
 
-const getUserProfile = tryCatch(async (req, res) => {
+const getUserProfile = tryCatch(async (req, res, next) => {
     const user = await User.findById(req.params.user).populate('posts following followers')
     if (!user) return next(new ErrorHandler(404, 'User doesn\'t exist'))
     res.status(200).json({ success: true, user, msg: 'Profile fetched successfully' })
 })
 
-const getAllUsers = tryCatch(async (req, res) => {
+const getAllUsers = tryCatch(async (req, res, next) => {
     const users = await User.find({ name: { $regex: req.query.name, $options: 'i' } })
     res.status(200).json({ success: true, users, msg: 'Profiles fetched successfully' })
 })
 
-const forgotPassword = tryCatch(async (req, res) => {
+const forgotPassword = tryCatch(async (req, res, next) => {
     const user = await User.findOne({ email: req.body.email })
     if (!user) return next(new ErrorHandler(404, 'User doesn\'t exist'))
     const resetPasswordToken = await user.getResetPasswordToken()
@@ -206,7 +206,7 @@ const forgotPassword = tryCatch(async (req, res) => {
     }
 })
 
-const resetPassword = tryCatch(async (req, res) => {
+const resetPassword = tryCatch(async (req, res, next) => {
     const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex')
     const user = await User.findOne({ resetPasswordToken, resetPasswordExpiry: { $gt: Date.now() } })
     if (!user) return next(new ErrorHandler(401, 'Token is invalid or has expired'))
@@ -217,7 +217,7 @@ const resetPassword = tryCatch(async (req, res) => {
     res.status(200).json({ success: true, msg: 'Password updated successful' })
 })
 
-const getMyPosts = tryCatch(async (req, res) => {
+const getMyPosts = tryCatch(async (req, res, next) => {
     const user = await User.findById(req.user._id)
     const posts = []
     for (let i = 0; i < user.posts.length; i++) {
@@ -227,7 +227,7 @@ const getMyPosts = tryCatch(async (req, res) => {
     res.status(200).json({ success: true, posts })
 })
 
-const getUserPosts = tryCatch(async (req, res) => {
+const getUserPosts = tryCatch(async (req, res, next) => {
     const user = await User.findById(req.params.id)
     const posts = []
     for (let i = 0; i < user.posts.length; i++) {
@@ -237,7 +237,7 @@ const getUserPosts = tryCatch(async (req, res) => {
     res.status(200).json({ success: true, posts })
 })
 
-const updateCaption = tryCatch(async (req, res) => {
+const updateCaption = tryCatch(async (req, res, next) => {
     const post = await Post.findById(req.params.id)
     if (!post) return next(new ErrorHandler(404, 'Post not Found'))
     if (post.owner.toString() != req.user._id.toString()) return next(new ErrorHandler(401, 'Don\'t edit other person\'s post'))

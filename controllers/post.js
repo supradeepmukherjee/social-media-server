@@ -5,7 +5,7 @@ import { User } from '../models/User.js'
 import { ErrorHandler } from '../utils/utility.js'
 import upload from '../utils/cloudinary.js'
 
-const likeUnlikePost = tryCatch(async (req, res) => {
+const likeUnlikePost = tryCatch(async (req, res, next) => {
     const post = await Post.findById(req.params.id)
     if (!post) return next(new ErrorHandler(404, 'Post not found'))
     if (post.likes.includes(req.user._id)) {
@@ -19,7 +19,7 @@ const likeUnlikePost = tryCatch(async (req, res) => {
     res.status(200).json({ success: true, msg: 'Post liked' })
 })
 
-const delPost = tryCatch(async (req, res) => {
+const delPost = tryCatch(async (req, res, next) => {
     const post = await Post.findById(req.params.id)
     if (!post) return next(new ErrorHandler(404, 'Post not found'))
     if (post.owner.toString() != req.user._id.toString()) return next(new ErrorHandler(401, 'Don\'t delete other person\'s post'))
@@ -32,14 +32,14 @@ const delPost = tryCatch(async (req, res) => {
     res.status(200).json({ success: true, msg: 'Post deleted' })
 })
 
-const getPostOfFollowing = tryCatch(async (req, res) => {
+const getPostOfFollowing = tryCatch(async (req, res, next) => {
     const user = await User.findById(req.user._id)
     if (!user) return next(new ErrorHandler(404, 'User not Found'))
     const posts = await Post.find({ owner: { $in: user.following } }).populate('owner likes comments.user')
     res.status(200).json({ success: true, posts: posts.reverse() })
 })
 
-const comment = tryCatch(async (req, res) => {
+const comment = tryCatch(async (req, res, next) => {
     const post = await Post.findById(req.params.id)
     if (!post) return next(new ErrorHandler(404, 'Post not found'))
     let exists = -1
@@ -58,7 +58,7 @@ const comment = tryCatch(async (req, res) => {
     }
 })
 
-const delComment = tryCatch(async (req, res) => {
+const delComment = tryCatch(async (req, res, next) => {
     const post = await Post.findById(req.params.id)
     if (!post) return next(new ErrorHandler(404, 'Post not found'))
     // checking if owner wants to delete
