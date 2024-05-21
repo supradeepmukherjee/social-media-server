@@ -75,7 +75,12 @@ const follow = tryCatch(async (req, res) => {
 })
 
 const logout = tryCatch(async (req, res) => {
-    res.status(200).cookie('token', null, { expires: new Date(Date.now()), httpOnly: true }).json({ success: true, msg: 'Logged Out' })
+    res.status(200).cookie('token', null, {
+        httpOnly: true,
+        sameSite: 'none',
+        secure: true,
+        maxAge: 0,
+    }).json({ success: true, msg: 'Logged Out' })
 })
 
 const updatePassword = tryCatch(async (req, res) => {
@@ -157,7 +162,12 @@ const deleteProfile = tryCatch(async (req, res) => {
     }
     await User.deleteOne({ _id: user._id })
     // logout user after deleting profile
-    res.cookie('token', null, { expires: new Date(Date.now()), httpOnly: true })
+    res.cookie('token', null, {
+        httpOnly: true,
+        sameSite: 'none',
+        secure: true,
+        maxAge: 0,
+    })
     res.status(200).json({ success: true, msg: 'Profile deleted successfully' })
 })
 
